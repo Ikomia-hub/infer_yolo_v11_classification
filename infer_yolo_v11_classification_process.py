@@ -89,7 +89,7 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
         # Core function of your process
         # Call begin_task_run() for initialization
         self.begin_task_run()
-        
+
         # Get parameters :
         param = self.get_param_object()
 
@@ -191,7 +191,8 @@ class InferYoloV11ClassificationFactory(dataprocess.CTaskFactory):
         # URL of documentation
         self.info.documentation_link = "https://docs.ultralytics.com/"
         # Code source repository
-        self.info.repository = "https://github.com/ultralytics/ultralytics"
+        self.info.repository = "https://github.com/Ikomia-hub/infer_yolo_v11_classification"
+        self.info.original_repository = "https://github.com/ultralytics/ultralytics"
         # Keywords used for search
         self.info.keywords = "YOLO, classification, ultralytics, coco"
         self.info.algo_type = core.AlgoType.INFER

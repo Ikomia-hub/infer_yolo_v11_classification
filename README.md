@@ -21,7 +21,7 @@
 
 Run YOLOv11 classification models.
 
-![illustration classif](https://raw.githubusercontent.com/Ikomia-hub/infer_yolo_v11_classification/main/icons/output.jpg)
+![illustration classif](https://raw.githubusercontent.com/Ikomia-hub/infer_yolo_v11_classification/main/images/output.jpg)
 
 ## :rocket: Use with Ikomia API
 
@@ -67,7 +67,7 @@ Ikomia Studio offers a friendly UI with the same features as the API.
     - yolo11s-cls
     - yolo11l-cls
     - yolo11x-cls
-- **input_size** (int) - default '244': Size of the input image.
+- **input_size** (int) - default '224': Size of the input image.
 - **cuda** (bool): If True, CUDA-based inference (GPU). If False, run on CPU.
 - **model_weight_file** (str, *optional*): Path to model weights file .pt. 
 
