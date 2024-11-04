@@ -49,12 +49,13 @@ class InferYoloV11ClassificationParam(core.CWorkflowTaskParam):
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = {}
-        param_map["model_name"] = str(self.model_name)
-        param_map["cuda"] = str(self.cuda)
-        param_map["input_size"] = str(self.input_size)
-        param_map["update"] = str(self.update)
-        param_map["model_weight_file"] = str(self.model_weight_file)
+        param_map = {
+            "model_name": str(self.model_name),
+            "cuda": str(self.cuda),
+            "input_size": str(self.input_size),
+            "update": str(self.update),
+            "model_weight_file": str(self.model_weight_file)
+        }
         return param_map
 
 
@@ -94,10 +95,10 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
         param = self.get_param_object()
 
         # Get input :
-        input = self.get_input(0)
+        img_input = self.get_input(0)
 
         # Get image from input/output (numpy array):
-        src_image = input.get_image()
+        src_image = img_input.get_image()
 
         # Load model
         if param.update or self.model is None:
@@ -137,14 +138,14 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
             classes_idx = probs.top5
 
             # Map each index to the class name
-            classe_name = [classes_names[idx] for idx in classes_idx]
-            confidence = probs.top5conf.detach().cpu().numpy()
+            t5_class_names = [classes_names[idx] for idx in classes_idx]
+            t5_confidences = probs.top5conf.detach().cpu().numpy()
 
             # Convert each conf to str
-            confidence_str = [str(conf) for conf in confidence]
+            confidence_str = [str(conf) for conf in t5_confidences]
 
             # Display results
-            self.set_whole_image_results(classe_name, confidence_str)
+            self.set_whole_image_results(t5_class_names, confidence_str)
 
         # Inference on ROIs
         else:
@@ -161,6 +162,10 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
                     half=self.half,
                     device=self.device
                 )
+
+                # Init class names
+                if len(self.get_names()) == 0:
+                    self.set_names(list(results[0].names.values()))
 
                 probs = results[0].probs
                 classes_idx = probs.top1
