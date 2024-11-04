@@ -119,7 +119,7 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
                     url = f'https://github.com/{self.repo}/releases/download/{self.version}/{param.model_name}.pt'
                     download(url=url, dir=model_folder, unzip=True)
                 self.model = YOLO(model_weights)
-            categories = [name for _, name in self.model.names.items()]
+            categories = list(self.model.names.values())
             self.set_names(categories)
             param.update = False
 
