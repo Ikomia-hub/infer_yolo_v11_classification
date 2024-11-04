@@ -134,12 +134,17 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
             # Get result output (classes, confidences)
             classes_names = results[0].names
             probs = results[0].probs
-            classes_idx = probs.top1
-            classe_name = [classes_names[classes_idx]]
-            confidence = probs.top1conf.detach().cpu().numpy()
+            classes_idx = probs.top5
 
-            # Display results in Ikomia application
-            self.set_whole_image_results(classe_name, [str(confidence)])
+            # Map each index to the class name
+            classe_name = [classes_names[idx] for idx in classes_idx]
+            confidence = probs.top5conf.detach().cpu().numpy()
+
+            # Convert each conf to str
+            confidence_str = [str(conf) for conf in confidence]
+
+            # Display results
+            self.set_whole_image_results(classe_name, confidence_str)
 
         # Inference on ROIs
         else:
