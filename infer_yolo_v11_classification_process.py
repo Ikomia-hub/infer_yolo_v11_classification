@@ -119,6 +119,8 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
                     url = f'https://github.com/{self.repo}/releases/download/{self.version}/{param.model_name}.pt'
                     download(url=url, dir=model_folder, unzip=True)
                 self.model = YOLO(model_weights)
+            categories = [name for _, name in self.model.names.items()]
+            self.set_names(categories)
             param.update = False
 
         # Inference on whole image
@@ -162,10 +164,6 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
                     half=self.half,
                     device=self.device
                 )
-
-                # Init class names
-                if len(self.get_names()) == 0:
-                    self.set_names(list(results[0].names.values()))
 
                 probs = results[0].probs
                 classes_idx = probs.top1
