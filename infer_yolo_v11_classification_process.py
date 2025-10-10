@@ -1,26 +1,8 @@
-# Copyright (C) 2021 Ikomia SAS
-# Contact: https://www.ikomia.com
-#
-# This file is part of the IkomiaStudio software.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 import copy
+import os
+import torch
 from ikomia import core, dataprocess, utils
 from ultralytics import YOLO
-import torch
-import os
 from ultralytics import download
 
 
@@ -86,6 +68,33 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
         # This is handled by the main progress bar of Ikomia Studio
         return 1
 
+    def _load_model(self):
+        param = self.get_param_object()
+        self.device = torch.device("cuda") if param.cuda and torch.cuda.is_available() else torch.device("cpu")
+        self.half = True if param.cuda and torch.cuda.is_available() else False
+
+        if param.model_weight_file:
+            self.model = YOLO(param.model_weight_file)
+        else:
+            # Set path
+            model_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "weights")
+            model_weights = os.path.join(str(model_folder), f'{param.model_name}.pt')
+
+            # Download model if not exist
+            if not os.path.isfile(model_weights):
+                url = f'https://github.com/{self.repo}/releases/download/{self.version}/{param.model_name}.pt'
+                download(url=url, dir=model_folder, unzip=True)
+
+            self.model = YOLO(model_weights)
+
+        categories = list(self.model.names.values())
+        self.set_names(categories)
+        param.update = False
+
+    def init_long_process(self):
+        self._load_model()
+        super().init_long_process()
+
     def run(self):
         # Core function of your process
         # Call begin_task_run() for initialization
@@ -101,27 +110,8 @@ class InferYoloV11Classification(dataprocess.CClassificationTask):
         src_image = img_input.get_image()
 
         # Load model
-        if param.update or self.model is None:
-            self.device = torch.device(
-                "cuda") if param.cuda and torch.cuda.is_available() else torch.device("cpu")
-            self.half = True if param.cuda and torch.cuda.is_available() else False
-
-            if param.model_weight_file:
-                self.model = YOLO(param.model_weight_file)
-            else:
-                # Set path
-                model_folder = os.path.join(os.path.dirname(
-                    os.path.realpath(__file__)), "weights")
-                model_weights = os.path.join(
-                    str(model_folder), f'{param.model_name}.pt')
-                # Download model if not exist
-                if not os.path.isfile(model_weights):
-                    url = f'https://github.com/{self.repo}/releases/download/{self.version}/{param.model_name}.pt'
-                    download(url=url, dir=model_folder, unzip=True)
-                self.model = YOLO(model_weights)
-            categories = list(self.model.names.values())
-            self.set_names(categories)
-            param.update = False
+        if param.update:
+            self._load_model()
 
         # Inference on whole image
         if self.is_whole_image_classification():
@@ -189,7 +179,8 @@ class InferYoloV11ClassificationFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference with YOLOv11 image classification models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Classification"
-        self.info.version = "1.0.0"
+        self.info.version = "1.1.0"
+        self.info.min_ikomia_version = "0.15.0"
         self.info.icon_path = "images/icon.png"
         self.info.authors = "Jocher, G., Chaurasia, A., & Qiu, J"
         self.info.article = "YOLO by Ultralytics"
@@ -205,6 +196,11 @@ class InferYoloV11ClassificationFactory(dataprocess.CTaskFactory):
         self.info.keywords = "YOLO, classification, ultralytics, coco"
         self.info.algo_type = core.AlgoType.INFER
         self.info.algo_tasks = "CLASSIFICATION"
+        # Min hardware config
+        self.info.hardware_config.min_cpu = 4
+        self.info.hardware_config.min_ram = 16
+        self.info.hardware_config.gpu_required = False
+        self.info.hardware_config.min_vram = 6
 
     def create(self, param=None):
         # Create algorithm object
